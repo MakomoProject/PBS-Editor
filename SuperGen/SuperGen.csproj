@@ -135,6 +135,7 @@
     <Compile Include="NumberInput.Designer.cs">
       <DependentUpon>NumberInput.cs</DependentUpon>
     </Compile>
+    <Compile Include="PEGame.cs" />
     <Compile Include="PokeGen.cs">
       <SubType>Form</SubType>
     </Compile>

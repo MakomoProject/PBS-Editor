@@ -32,9 +32,9 @@ namespace SuperGen
             abilityBox.DataSource = abilityBinder;
             abilityBox.DisplayMember = "name";
 
-            if (File.Exists(@"PBS\abilities.txt"))
+            if (File.Exists(SuperForm.gameRoot( @"PBS\abilities.txt")))
             {
-                StreamReader sr = new StreamReader(File.OpenRead(@"PBS\abilities.txt"));
+                StreamReader sr = new StreamReader(File.OpenRead(SuperForm.gameRoot(@"PBS\abilities.txt")));
                 string dat = sr.ReadToEnd();
                 if (string.IsNullOrEmpty(dat))
                 {
@@ -251,7 +251,7 @@ namespace SuperGen
         {
             Ability a = abilities[abilityBox.SelectedIndex];
             string txt = $"{a.id},{a.intname},{a.name},\"{a.description}\"";
-            SuperForm.exportFile($"ability{a.id}.txt", txt);
+            PEGame.exportFile($"ability{a.id}.txt", txt);
         }
 
         private void exportToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -265,7 +265,7 @@ namespace SuperGen
                 if (i != abilities.Count - 1) { ret += $"{a.id},{a.intname},{a.name},\"{a.description}\"\r\n"; }
                 else { ret += $"{a.id},{a.intname},{a.name},\"{a.description}\""; }
             }
-            SuperForm.exportFile("abilities.txt", ret);
+            PEGame.exportFile("abilities.txt", ret);
         }
 
         private void overwriteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -279,7 +279,7 @@ namespace SuperGen
                 if (i != abilities.Count - 1) { ret += $"{a.id},{a.intname},{a.name},\"{a.description}\"\r\n"; }
                 else { ret += $"{a.id},{a.intname},{a.name},\"{a.description}\""; }
             }
-            SuperForm.pbsFile("abilitites.txt", ret);
+            PEGame.pbsFile("abilitites.txt", ret);
         }
 
         private void AbilityForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -301,7 +301,7 @@ namespace SuperGen
 
         private void openAbilitiestxtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start(@"PBS\abilities.txt");
+            Process.Start(SuperForm.gameRoot(@"PBS\abilities.txt"));
         }
 
         private void internalNameFinderToolStripMenuItem_Click(object sender, EventArgs e)

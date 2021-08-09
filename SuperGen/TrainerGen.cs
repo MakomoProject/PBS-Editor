@@ -1077,7 +1077,7 @@ string shiny = p.shiny ? "shiny" : null;
 txt += stripCommas($"{p.species},{p.level},{p.item},{p.moves[0]},{p.moves[1]},{p.moves[2]},{p.moves[3]},{p.ability},{p.gender},{p.form},"
 + $"{shiny},{p.nature},{p.iv},{p.happiness},{p.nick},{shadow},{p.ball}");
 if (i != t.pokes.Count - 1) { txt += "\r\n"; } }
-            SuperForm.exportFile($"trainers{t.type} {t.name}.txt", txt);
+            PEGame.exportFile($"trainers{t.type} {t.name}.txt", txt);
         }
         private void generateToolStripMenuItem2_Click(object sender, EventArgs e)
         {
@@ -1124,7 +1124,7 @@ txt += stripCommas($"{p.species},{p.level},{p.item},{p.moves[0]},{p.moves[1]},{p
 + $"{shiny},{p.nature},{p.iv},{p.happiness},{p.nick},{shadow},{p.ball}");
 if (j != t.pokes.Count - 1) { txt += "\r\n"; } }
 if (i != trainers.Count -1) { txt += "\r\n"; } }
-            SuperForm.exportFile("trainers.txt", txt);
+            PEGame.exportFile("trainers.txt", txt);
         }
         private void overwriteToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -1148,7 +1148,7 @@ txt += stripCommas($"{p.species},{p.level},{p.item},{p.moves[0]},{p.moves[1]},{p
 + $"{shiny},{p.nature},{p.iv},{p.happiness},{p.nick},{shadow},{p.ball}");
 if (j != t.pokes.Count - 1) { txt += "\r\n"; } }
 if (i != trainers.Count -1) { txt += "\r\n"; } }
-            SuperForm.pbsFile("trainers.txt", txt); }
+                PEGame.pbsFile("trainers.txt", txt); }
         }
 
         private void defaultBtn_Click(object sender, EventArgs e)

@@ -20,6 +20,7 @@ namespace SuperGen
         WindowsMediaPlayer player;
         private BindingSource classBinder = new BindingSource();
         private List<Class> classes = new List<Class>();
+        private PEGame peGame = PEGame.NewInstance();
 
         public TrainerClassForm()
         {
@@ -41,104 +42,19 @@ namespace SuperGen
 
         private void TrainerClassForm_Load(object sender, EventArgs e)
         {
-            if (File.Exists(@"PBS\trainertypes.txt")) { try {
-                    StreamReader sr = new StreamReader(File.OpenRead(@"PBS\trainertypes.txt"));
-                    string dat = sr.ReadToEnd();
-                    sr.Close();
-                    if (string.IsNullOrEmpty(dat))
-                    {
-                        emptyFile("Trainer Class Editor", "trainertypes");
-                        terminate = true;
-                        Close();
-                        return;
-                    }
-                    List<string> entries = dat.Split(new string[] { "\r\n" }, StringSplitOptions.None).ToList();
-                    for (int i = 0; i < entries.Count; i++)
-                    {
-                        try
-                        {
-                            if (!entries[i].StartsWith("#") && !entries[i].StartsWith(" ") && !entries[i].StartsWith("\r\n") && entries[i].Length > 0) {
-                                bool cont = true;
-                                List<string> line = entries[i].Split(',').ToList();
-                                int id = Convert.ToInt32(line[0]);
-                                string name = line[2];
-                                string intname = line[1];
-                                int? money = null;
-                                string bgmusic = null;
-                                string victorymusic = null;
-                                string intromusic = null;
-                                string gender = null;
-                                int? skill = null;
-                                try { money = Convert.ToInt32(line[3]); }
-                                catch (Exception) {
-                                    money = null;
-                                    bgmusic = null;
-                                    victorymusic = null;
-                                    intromusic = null;
-                                    gender = null;
-                                    skill = null;
-                                    cont = false; }
-                                if (cont) {
-                                    try { bgmusic = line[4]; }
-                                    catch (Exception) {
-                                        bgmusic = null;
-                                        victorymusic = null;
-                                        intromusic = null;
-                                        gender = null;
-                                        skill = null;
-                                        cont = false; } }
-                                if (cont) {
-                                    try { victorymusic = line[5]; }
-                                    catch (Exception) {
-                                        victorymusic = null;
-                                        intromusic = null;
-                                        gender = null;
-                                        skill = null;
-                                        cont = false; } }
-                                if (cont) {
-                                    try { intromusic = line[6]; }
-                                    catch (Exception) {
-                                        intromusic = null;
-                                        gender = null;
-                                        skill = null;
-                                        cont = false; } }
-                                if (cont) {
-                                    try { gender = line[7]; }
-                                    catch (Exception) {
-                                        gender = null;
-                                        skill = null;
-                                        cont = false; } }
-                                if (cont) {
-                                    try { skill = Convert.ToInt32(line[8]); }
-                                    catch (Exception) {
-                                        skill = null;
-                                        cont = false; } }
-                                classes.Add(new Class(id, name, intname, money, bgmusic, victorymusic, intromusic, gender, skill));
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            SuperForm.invalidLine("trainertypes", entries[i], "Trainer Class Editor");
-                            terminate = true;
-                            Close();
-                            return;
-                        }
-                    }
-                }
-                catch (Exception) {
-                    MessageBox.Show("Something went wrong while converting data inside \"trainertypes.txt\".","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    terminate = true;
-                    Close();
-                    return;
-                }
-            }
-            else
+            #region Load Trainertypes
+            var tys = peGame.loadTrainertypesInstance();
+            if (tys.Count == 0)
             {
-                SuperForm.fileNotFound("trainertypes", "Trainer Class Editor");
                 terminate = true;
                 Close();
                 return;
             }
+            else
+            {
+                classes.Clear(); classes.AddRange(tys);
+            }
+            #endregion
 
             classBinder.DataSource = classes;
             classBox.DataSource = classBinder;
@@ -261,7 +177,7 @@ namespace SuperGen
         {
             if (defaultMoney.Checked)
             {
-                moneyBox.Value = 30; classes[classBox.SelectedIndex].money = null;  moneyBox.Enabled = false;
+                moneyBox.Value = 30; classes[classBox.SelectedIndex].money = null; moneyBox.Enabled = false;
             }
             else
             {
@@ -272,7 +188,7 @@ namespace SuperGen
         {
             if (defaultBGMusic.Checked)
             {
-                bgMusic.Text = null; classes[classBox.SelectedIndex].bgmusic = null;  bgMusic.Enabled = false;
+                bgMusic.Text = null; classes[classBox.SelectedIndex].bgmusic = null; bgMusic.Enabled = false;
             }
             else
             {
@@ -305,7 +221,7 @@ namespace SuperGen
         {
             if (defaultGender.Checked)
             {
-                genderBox.Text = "Mixed"; classes[classBox.SelectedIndex].gender = null;genderBox.Enabled = false;
+                genderBox.Text = "Mixed"; classes[classBox.SelectedIndex].gender = null; genderBox.Enabled = false;
             }
             else
             {
@@ -326,135 +242,153 @@ namespace SuperGen
 
         private void browseBGMusic_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            if (Directory.Exists(@"Audio\BGM")) { ofd.InitialDirectory = @"Audio\BGM"; }
-            else { ofd.InitialDirectory = Application.CommonAppDataPath; }
-            ofd.Title = "Choose Background Music";
-            ofd.Filter = "All Files (*.*)|*.*|"
-                + "OGG Verbis (*.ogg)|*.ogg|"
-                + "MP3 File (*.mp3)|*.mp3|"
-                + "WAV File (*.wav)|*.wav";
+            var bgmPath = peGame.root(@"Audio\BGM");
+            OpenFileDialog ofd = openFileDialog(peGame.root(@"Audio\BGM"), "Choose Background Music");
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                MessageBox.Show(@"Audio\BGM");
+                MessageBox.Show(bgmPath);
                 List<string> temp = ofd.FileName.Split('\\').Last().Split('.').ToList();
                 string retval = null;
-                for (int i = 0; i < temp.Count; i++) {
+                for (int i = 0; i < temp.Count; i++)
+                {
                     if (i == 0) { retval += temp[0]; }
-                    else if (i != temp.Count - 1) { retval += "." + temp[i]; } }
+                    else if (i != temp.Count - 1) { retval += "." + temp[i]; }
+                }
                 bgMusic.Text = retval;
-                if (!File.Exists($@"Audio\BGM\{ofd.FileName.Split('\\').Last()}"))
-                { File.Copy(ofd.FileName, $@"Audio\BGM\{retval}.{temp.Last()}"); }
+                var bgm = $@"Audio\BGM\{ofd.FileName.Split('\\').Last()}";
+                bgm = peGame.root(bgm);
+                if (!File.Exists(bgm))
+                {
+                    var newPath = peGame.root($@"Audio\BGM\{retval}.{temp.Last()}");
+                    File.Copy(ofd.FileName, newPath);
+                }
                 if (bgMusic.Text.Length > 0) { defaultBGMusic.Checked = false; bgMusic.Enabled = true; }
             }
         }
         private void browseVictoryMusic_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
-            if (Directory.Exists(@"Audio\BGM")) { ofd.InitialDirectory = @"Audio\BGM"; }
-            else { ofd.InitialDirectory = Application.CommonAppDataPath; }
-            ofd.Title = "Choose Victory Music";
-            ofd.Filter = "All Files (*.*)|*.*|"
-                + "OGG Verbis (*.ogg)|*.ogg|"
-                + "MP3 File (*.mp3)|*.mp3|"
-                + "WAV File (*.wav)|*.wav";
+            OpenFileDialog ofd = openFileDialog(peGame.root(@"Audio\ME"), "Choose Victory Music");
+
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 List<string> temp = ofd.FileName.Split('\\').Last().Split('.').ToList();
                 string retval = null;
-                for (int i = 0; i < temp.Count; i++) {
+                for (int i = 0; i < temp.Count; i++)
+                {
                     if (i == 0) { retval += temp[0]; }
-                    else if (i != temp.Count - 1) { retval += "." + temp[i]; } }
+                    else if (i != temp.Count - 1) { retval += "." + temp[i]; }
+                }
                 victoryMusic.Text = retval;
-                if (!File.Exists($@"Audio\BGM\{ofd.FileName.Split('\\').Last()}"))
-                { File.Copy(ofd.FileName, $@"Audio\BGM\{retval}.{temp.Last()}"); }
+                var path = peGame.root($@"Audio\ME\{ofd.FileName.Split('\\').Last()}");
+                if (!File.Exists(path))
+                {
+                    var newPath = peGame.root($@"Audio\ME\{retval}.{temp.Last()}");
+                    File.Copy(ofd.FileName, newPath); 
+                }
                 if (victoryMusic.Text.Length > 0) { defaultVictoryMusic.Checked = false; victoryMusic.Enabled = true; }
             }
         }
         private void browseIntroMusic_Click(object sender, EventArgs e)
         {
+            OpenFileDialog ofd = openFileDialog(peGame.root(@"Audio\ME"), "Choose Intro Music");
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                List<string> temp = ofd.FileName.Split('\\').Last().Split('.').ToList();
+                string retval = null;
+                for (int i = 0; i < temp.Count; i++)
+                {
+                    if (i == 0) { retval += temp[0]; }
+                    else if (i != temp.Count - 1) { retval += "." + temp[i]; }
+                }
+                introMusic.Text = retval;
+                var path = peGame.root($@"Audio\ME\{ofd.FileName.Split('\\').Last()}");
+                if (!File.Exists(path))
+                { 
+                    var newPath = peGame.root($@"Audio\ME\{retval}.{temp.Last()}");
+                    File.Copy(ofd.FileName, newPath); 
+                }
+                if (introMusic.Text.Length > 0) { defaultIntroMusic.Checked = false; introMusic.Enabled = true; }
+            }
+        }
+        private OpenFileDialog openFileDialog(string path, string title)
+        {
             OpenFileDialog ofd = new OpenFileDialog();
-            if (Directory.Exists(@"Audio\ME")) { ofd.InitialDirectory = @"Audio\ME"; }
+            if (Directory.Exists(path)) { ofd.InitialDirectory = path; }
             else { ofd.InitialDirectory = Application.CommonAppDataPath; }
-            ofd.Title = "Choose Intro Music";
+            ofd.Title = title;
             ofd.Filter = "All Files (*.*)|*.*|"
                 + "OGG Verbis (*.ogg)|*.ogg|"
                 + "MP3 File (*.mp3)|*.mp3|"
                 + "WAV File (*.wav)|*.wav|"
                 + "MIDI file (*.mid)|*.mid";
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                List<string> temp = ofd.FileName.Split('\\').Last().Split('.').ToList();
-                string retval = null;
-                for (int i = 0; i < temp.Count; i++) {
-                    if (i == 0) { retval += temp[0]; }
-                    else if (i != temp.Count - 1) { retval += "." + temp[i]; } }
-                introMusic.Text = retval;
-                if (!File.Exists($@"Audio\ME\{ofd.FileName.Split('\\').Last()}"))
-                { File.Copy(ofd.FileName, $@"Audio\ME\{retval}.{temp.Last()}"); }
-                if (introMusic.Text.Length > 0) { defaultIntroMusic.Checked = false; introMusic.Enabled = true; }
-            }
+            return ofd;
         }
+
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (!canPlay) { return; }
-            player.controls.stop();
-            player.settings.volume = (int)volumeBox.Value;
-            if (!Directory.Exists(@"Audio") || !Directory.Exists(@"Audio\BGM")) { MessageBox.Show("One or more audio folders are missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
-            else {
-                if (File.Exists($@"Audio\BGM\{bgMusic.Text}.mid"))
-                { player.URL = $@"Audio\BGM\{bgMusic.Text}.mid";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\BGM\{bgMusic.Text}.wav"))
-                { player.URL = $@"Audio\BGM\{bgMusic.Text}.wav";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\BGM\{bgMusic.Text}.mp3"))
-                { player.URL = $@"Audio\BGM\{bgMusic.Text}.mp3";
-                    player.controls.play(); }
-                else { MessageBox.Show("No audio file found! Supported extensions: *.mid, *.wav, *.mp3.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); } }
+            playAudio(@"BGM\" + bgMusic.Text);
         }
         private void button2_Click(object sender, EventArgs e)
         {
             if (!canPlay) { return; }
             player.controls.stop();
+            musicToolStripStatusLabel.Text = "Music";
         }
         private void button4_Click(object sender, EventArgs e)
         {
-            if (!canPlay) { return; }
-            player.controls.stop();
-            player.settings.volume = (int)volumeBox.Value;
-            if (!Directory.Exists("Audio") || !Directory.Exists(@"Audio\BGM")) { MessageBox.Show("One or more audio folders are missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
-            else {
-                if (File.Exists($@"Audio\BGM\{victoryMusic.Text}.mid"))
-                { player.URL = $@"Audio\BGM\{victoryMusic.Text}.mid";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\BGM\{victoryMusic.Text}.wav"))
-                { player.URL = $@"Audio\BGM\{victoryMusic.Text}.wav";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\BGM\{victoryMusic.Text}.mp3"))
-                { player.URL = $@"Audio\BGM\{victoryMusic.Text}.mp3";
-                    player.controls.play(); }
-                else { MessageBox.Show("No audio file found! Supported extensions: *.mid, *.wav, *.mp3.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); } }
+            playAudio(@"ME\" + victoryMusic.Text); 
         }
         private void button6_Click(object sender, EventArgs e)
+        {
+            playAudio(@"BGM\" + introMusic.Text);
+        }
+        private bool existsAudioDir()
+        {
+            if (!Directory.Exists(peGame.root($@"Audio")) || !Directory.Exists(peGame.root(@"Audio\ME"))) { 
+                MessageBox.Show("One or more audio folders are missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); 
+                return false; 
+            }
+            return true;
+        }
+        private void playAudio(string audio)
         {
             if (!canPlay) { return; }
             player.controls.stop();
             player.settings.volume = (int)volumeBox.Value;
-            if (!Directory.Exists($@"Audio") || !Directory.Exists(@"Audio\ME")) { MessageBox.Show("One or more audio folders are missing.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
-            else {
-                if (File.Exists($@"Audio\ME\{introMusic.Text}.mid"))
-                { player.URL = $@"Audio\ME\{introMusic.Text}.mid";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\ME\{introMusic.Text}.wav"))
-                { player.URL = $@"Audio\ME\{introMusic.Text}.wav";
-                    player.controls.play(); }
-                else if (File.Exists($@"Audio\ME\{introMusic.Text}.mp3"))
-                { player.URL = $@"Audio\ME\{introMusic.Text}.mp3";
-                    player.controls.play(); }
-                else { MessageBox.Show("No audio file found! Supported extensions: *.mid, *.wav, *.mp3.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); } }
+            if (existsAudioDir())
+            {
+                var path = peGame.root($@"Audio\{audio}");
+                if (File.Exists(path + ".mid"))
+                {
+                    player.URL = path + ".mid";
+                    player.controls.play();
+                }
+                else if (File.Exists(path + ".wav"))
+                {
+                    player.URL = path + ".wav";
+                    player.controls.play();
+                }
+                else if (File.Exists(path + ".mp3"))
+                {
+                    player.URL = path + ".mp3";
+                    player.controls.play();
+                }
+                else if (File.Exists(path + ".ogg"))
+                {
+                    player.URL = path + ".ogg";
+                    player.controls.play();
+                }
+                else { 
+                    MessageBox.Show("No audio file found! Supported extensions: *.mid, *.wav, *.mp3, *.ogg.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                musicToolStripStatusLabel.Text = player.URL;
+            }
         }
+
+
         private void volumeBox_ValueChanged(object sender, EventArgs e)
         {
             if (!canPlay) { return; }
@@ -567,16 +501,18 @@ namespace SuperGen
         {
             Class c = classes[classBox.SelectedIndex];
             string ret = $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},";
-            SuperForm.exportFile($"trainertype{c.id}.txt", ret);
+            PEGame.exportFile($"trainertype{c.id}.txt", ret);
         }
         private void generateToolStripMenuItem2_Click(object sender, EventArgs e)
         {
             classes.Sort(delegate (Class c1, Class c2) { return c1.id.CompareTo(c2.id); });
             classBinder.ResetBindings(false);
             string ret = null;
-            for (int a = 0; a < classes.Count; a++) {
+            for (int a = 0; a < classes.Count; a++)
+            {
                 Class c = classes[a];
-                ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; } }
+                ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; }
+            }
             GennedTypes gt = new GennedTypes();
             gt.txt = ret;
             gt.Show();
@@ -586,10 +522,12 @@ namespace SuperGen
             classes.Sort(delegate (Class c1, Class c2) { return c1.id.CompareTo(c2.id); });
             classBinder.ResetBindings(false);
             string ret = null;
-            for (int a = 0; a < classes.Count; a++) {
+            for (int a = 0; a < classes.Count; a++)
+            {
                 Class c = classes[a];
-                ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; } }
-            SuperForm.exportFile("trainertypes.txt", ret);
+                ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; }
+            }
+            PEGame.exportFile("trainertypes.txt", ret);
         }
 
         private void overwriteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -599,16 +537,18 @@ namespace SuperGen
                 classes.Sort(delegate (Class c1, Class c2) { return c1.id.CompareTo(c2.id); });
                 classBinder.ResetBindings(false);
                 string ret = null;
-                for (int a = 0; a < classes.Count; a++) {
+                for (int a = 0; a < classes.Count; a++)
+                {
                     Class c = classes[a];
-                    ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; } }
-                SuperForm.pbsFile("trainertypes.txt", ret);
+                    ret += $"{c.id},{c.intname},{c.name},{c.money},{c.bgmusic},{c.victorymusic},{c.intromusic},{c.gender},{c.skill},"; if (a != classes.Count - 1) { ret += "\r\n"; }
+                }
+                PEGame.pbsFile("trainertypes.txt", ret);
             }
         }
 
         private void openTrainertypestxtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start($@"PBS\trainertypes.txt");
+            Process.Start(PEGame.Instance.root($@"PBS\trainertypes.txt"));
         }
 
         private void findInternalNameToolStripMenuItem_Click(object sender, EventArgs e)

@@ -29,70 +29,17 @@ namespace MiscGen
         private void TypeGen_Load(object sender, EventArgs e)
         {
             #region Loads types.txt
-            try {
-                StreamReader read = new StreamReader(@"PBS\types.txt");
-                string dat = read.ReadToEnd();
-                read.Close();
-                if (string.IsNullOrEmpty(dat))
-                {
-                    emptyFile("Types Editor", "types");
-                    terminate = true;
-                    Close();
-                    return;
-                }
-                string data = dat;
-                if (!string.IsNullOrEmpty(data)) {
-                    List<string> allTypeData = new List<string>();
-                    allTypeData = data.Split('[').ToList();
-                    allTypeData.RemoveAt(0);
-                    for (int i = 0; i < allTypeData.Count; i++)
-                    {
-                        try
-                        {
-                            if (!allTypeData[i].StartsWith("#"))
-                            {
-                                int id = Convert.ToInt32(allTypeData[i].Split(']')[0]);
-                                string name = allTypeData[i].Split(new string[] { "Name=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0];
-                                string intname = allTypeData[i].Split(new string[] { "InternalName=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0];
-                                bool special = false;
-                                bool pseudo = false;
-                                List<string> weaknesses = new List<string>();
-                                List<string> resistances = new List<string>();
-                                List<string> immunities = new List<string>();
-                                List<string> supereffectives = new List<string>();
-                                if (allTypeData[i].Contains("Weaknesses=")) { weaknesses = allTypeData[i].Split(new string[] { "Weaknesses=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0].Split(',').ToList(); }
-                                if (allTypeData[i].Contains("Resistances=")) { resistances = allTypeData[i].Split(new string[] { "Resistances=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0].Split(',').ToList(); }
-                                if (allTypeData[i].Contains("Immunities=")) { immunities = allTypeData[i].Split(new string[] { "Immunities=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0].Split(',').ToList(); }
-                                if (allTypeData[i].Contains("IsSpecialType=")) { special = true; }
-                                if (allTypeData[i].Contains("IsPseudoType=")) { pseudo = true; }
-                                types.Add(new Typing(id, name, intname, weaknesses, resistances, immunities, supereffectives, special, pseudo));
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            invalidLine("types", allTypeData[i], "Type Editor");
-                            terminate = true;
-                            Close();
-                            return;
-                        }
-                    }
-
-                    for (int i = 0; i < types.Count; i++) {
-                        for (int j = 0; j < types.Count; j++) {
-                            if (types[j].weaknesses.Contains(types[i].intname)) {
-                                types[i].supereffectives.Add(types[j].intname); } } }
-                    types.Sort(delegate (Typing t1, Typing t2) { return t1.id.CompareTo(t2.id); }); typeBinder.ResetBindings(false);
-                } else {
-                    MessageBox.Show("\"types.txt\" cannot be empty.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    terminate = true;
-                    Close();
-                    return;
-                } }
-            catch (Exception) {
-                fileNotFound("types", "Type Editor");
+            var typings = PEGame.Instance.loadTypesInstance();
+            if (typings.Count == 0)
+            {
                 terminate = true;
                 Close();
                 return;
+            }
+            else
+            {
+                types.Clear(); types.AddRange(typings);
+                typeBinder.ResetBindings(false);
             }
             #endregion
             typeBinder.DataSource = types;
@@ -362,7 +309,8 @@ g.txt += "Immunities="; for (int j = 0; j < types[i].immunities.Count; j++) {
 if (j != 0) { g.txt += "," + types[i].immunities[j]; } else {
 g.txt += types[i].immunities[j]; } } g.txt += @"
 "; } g.txt += @"
-"; } SuperForm.exportFile("types.txt", g.txt);
+"; }
+                PEGame.exportFile("types.txt", g.txt);
             }
             else
             {
@@ -397,7 +345,8 @@ g.txt += "Immunities="; for (int j = 0; j < types[i].immunities.Count; j++) {
 if (j != 0) { g.txt += "," + types[i].immunities[j]; } else {
 g.txt += types[i].immunities[j]; } } g.txt += @"
 "; } g.txt += @"
-"; } SuperForm.exportFile("types.txt", g.txt); }
+"; }
+                    PEGame.exportFile("types.txt", g.txt); }
             }
             else
             {
@@ -498,7 +447,7 @@ g.txt += types[i].immunities[j]; } } g.txt += @"
 
         private void openTypestxtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start(@"PBS\types.txt");
+            Process.Start(PEGame.Instance.root( @"PBS\types.txt"));
         }
 
         private void findInternalNameToolStripMenuItem_Click(object sender, EventArgs e)

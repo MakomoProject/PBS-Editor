@@ -26,10 +26,17 @@ namespace SuperGen
         private string html;
         private string masterUrl = "http://pastebin.com/raw/31d54Rb0";
         public static string changelogUrl = "https://pastebin.com/raw/12As4Qvz";
+        public static PEGame peGame = PEGame.NewInstance();
+
 
         public SuperForm()
         {
             InitializeComponent();
+        }
+
+        public static string gameRoot(string path)
+        {
+            return peGame.root(path);
         }
 
         public static string getBall(int ball)
@@ -163,6 +170,37 @@ namespace SuperGen
             return (!data.StartsWith("#") && !data.StartsWith("\r\n") && !data.StartsWith(" ") && data.Length > 0);
         }
 
+        private void chooseGameFolder(string path)
+        {
+            peGame = PEGame.NewInstance();
+            peGame.gameFolder = path;
+            gameFolderToolStripStatusLabel.Text = peGame.gameFolder;
+
+            loadVersion();
+        }
+
+        private void loadVersion()
+        {
+            if (File.Exists(gameRoot("Version.txt")))
+            {
+                StreamReader sr = new StreamReader(File.OpenRead(gameRoot("Version.txt")));
+                version = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(sr.ReadToEnd()));
+                sr.Close();
+            }
+            else if (File.Exists(gameRoot("game.ini")))
+            {
+                StreamReader sr = new StreamReader(gameRoot("game.ini"));
+                version = sr.ReadToEnd();
+                version = version.Split(new string[] { "Title=" }, StringSplitOptions.None)[1].Split(new string[] { "\r\n" }, StringSplitOptions.None)[0];
+                version = "(" + version + ")";
+                sr.Close();
+            }
+            else
+            {
+                version = "v0.0.0";
+            }
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
             PokeGenerator.PokeGenerator pg = new PokeGenerator.PokeGenerator();
@@ -190,9 +228,11 @@ namespace SuperGen
         }
         private void SuperForm_Load(object sender, EventArgs e)
         {
-            if (!File.Exists(@"PBS\editorinfo.txt"))
+            gameFolderToolStripStatusLabel.Text = peGame.gameFolder;
+
+            if (File.Exists(gameRoot(@"PBS\editorinfo.txt")))
             {
-                StreamWriter sw = new StreamWriter(File.OpenWrite(@"PBS\editorinfo.txt"));
+                StreamWriter sw = new StreamWriter(File.OpenWrite(gameRoot(@"PBS\editorinfo.txt")));
                 sw.Write(
 @"[POKEDEXES]
 pokedex1=Kanto
@@ -201,16 +241,8 @@ pokedex3=National
 ");
                 sw.Close();
             }
-            if (File.Exists("Version.txt"))
-            {
-                StreamReader sr = new StreamReader(File.OpenRead("Version.txt"));
-                version = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(sr.ReadToEnd()));
-                sr.Close();
-            }
-            else
-            {
-                version = "v0.0.0";
-            }
+
+            chooseGameFolder(peGame.gameFolder);
 
             WebClient client = new WebClient();
             Stream stream = client.OpenRead(masterUrl);
@@ -244,7 +276,9 @@ pokedex3=National
 
         private void openPBSFolderToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("PBS");
+            var pbs = gameRoot("PBS");
+            if (Directory.Exists(pbs))
+                System.Diagnostics.Process.Start(pbs);
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -299,5 +333,19 @@ pokedex3=National
             TMEditor tme = new TMEditor();
             tme.Show();
         }
+
+        private void selectGameFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+            dialog.Description = "Please select the game path";
+            dialog.SelectedPath = peGame.gameFolder;
+            //dialog.RootFolder = Environment.SpecialFolder.Programs;
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                chooseGameFolder(dialog.SelectedPath);
+            }
+        }
+
+
     }
 }

@@ -266,7 +266,7 @@ $@"[{tm.name}]
 
         private void exportToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            exportFile("tm.txt", getTM(tms[tmBox.SelectedIndex]));
+            PEGame.exportFile("tm.txt", getTM(tms[tmBox.SelectedIndex]));
         }
 
         private void generateToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -290,7 +290,7 @@ $@"[{tm.name}]
                 ret += getTM(tms[i]);
                 if (i != tms.Count - 1) ret += "\r\n";
             }
-            exportFile("tm.txt", ret);
+            PEGame.exportFile("tm.txt", ret);
         }
 
         private void overwriteToolStripMenuItem_Click(object sender, EventArgs e)
@@ -301,7 +301,7 @@ $@"[{tm.name}]
                 ret += getTM(tms[i]);
                 if (i != tms.Count - 1) ret += "\r\n";
             }
-            pbsFile("tm.txt", ret);
+            PEGame.pbsFile("tm.txt", ret);
         }
 
         private void reloadDataToolStripMenuItem_Click(object sender, EventArgs e)

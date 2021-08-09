@@ -40,7 +40,51 @@ namespace MoveGen
             typeBinder.DataSource = types;
             typeBox.DataSource = typeBinder;
             typeBox.DisplayMember = "name";
-            if (File.Exists(@"PBS\types.txt")) { try {
+
+            load();
+
+            moveBinder.ResetBindings(false);
+            typeBinder.ResetBindings(false);
+            checkSortMethod(SuperGen.Properties.Settings.Default.MoveSortMethod);
+            bool found = false;
+            if (!string.IsNullOrEmpty(SuperGen.Properties.Settings.Default.MoveIntName))
+            {
+                for (int i = 0; i < moves.Count; i++)
+                {
+                    if (moves[i].intname == SuperGen.Properties.Settings.Default.MoveIntName) { moveBox.SelectedIndex = i; found = true; }
+                }
+            }
+            if (!found && moves.Count > 0) { moveBox.SelectedIndex = 0; }
+            moveBox_SelectedIndexChanged(sender, e);
+        }
+
+        private void load()
+        {
+            #region Load types.txt
+            terminate = !PEGame.Instance.loadTypes();
+            if (!terminate)
+            {
+
+            }
+            #endregion
+
+            #region Load moves.txt
+            var moveList = PEGame.Instance.loadMovesInstance();
+            moves.Clear(); moves.AddRange(moveList);
+            #endregion
+
+            if (terminate)
+            {
+                Close();
+            }
+        }
+
+        private void load_old()
+        {
+            if (File.Exists(@"PBS\types.txt"))
+            {
+                try
+                {
                     StreamReader sr = new StreamReader(File.OpenRead(@"PBS\types.txt"));
                     string dat = sr.ReadToEnd();
                     sr.Close();
@@ -83,7 +127,10 @@ namespace MoveGen
                 Close();
                 return;
             }
-            if (File.Exists(@"PBS\moves.txt")) { try {
+            if (File.Exists(@"PBS\moves.txt"))
+            {
+                try
+                {
                     StreamReader sr = new StreamReader(File.OpenRead(@"PBS\moves.txt"));
                     string dat = sr.ReadToEnd();
                     sr.Close();
@@ -96,7 +143,8 @@ namespace MoveGen
                     }
                     List<string> data = dat.Split(new string[] { "\r\n" }, StringSplitOptions.None).ToList();
                     moves.Clear();
-                    for (int i = 0; i < data.Count; i++) {
+                    for (int i = 0; i < data.Count; i++)
+                    {
                         if (!data[i].StartsWith("#") && !data[i].StartsWith(" ") && !data[i].StartsWith("\r\n") && data[i].Length > 0)
                         {
                             try
@@ -184,20 +232,12 @@ namespace MoveGen
                 Close();
                 return;
             }
-            moveBinder.ResetBindings(false);
-            typeBinder.ResetBindings(false);
-            checkSortMethod(SuperGen.Properties.Settings.Default.MoveSortMethod);
-            bool found = false;
-            if (!string.IsNullOrEmpty(SuperGen.Properties.Settings.Default.MoveIntName)) {
-                for (int i = 0; i < moves.Count; i++) {
-                    if (moves[i].intname == SuperGen.Properties.Settings.Default.MoveIntName) { moveBox.SelectedIndex = i; found = true; } } }
-            if (!found && moves.Count > 0) { moveBox.SelectedIndex = 0; }
-            moveBox_SelectedIndexChanged(sender, e);
         }
-        
+
         private void checkSortMethod(string SortMethod)
         {
-            switch (SortMethod) {
+            switch (SortMethod)
+            {
                 case "ID": moves.Sort(delegate (Move m1, Move m2) { return m1.id.CompareTo(m2.id); }); break;
                 case "DisplayName": moves.Sort(delegate (Move m1, Move m2) { return m1.name.CompareTo(m2.name); }); break;
                 case "InternalName": moves.Sort(delegate (Move m1, Move m2) { return m1.intname.CompareTo(m2.intname); }); break;
@@ -210,7 +250,8 @@ namespace MoveGen
                 case "Priority": moves.Sort(delegate (Move m1, Move m2) { return m1.priority.CompareTo(m2.priority); }); moves.Reverse(); break;
                 case "Effect": moves.Sort(delegate (Move m1, Move m2) { return m1.effect.CompareTo(m2.effect); }); break;
                 case "AdditionalEffect": moves.Sort(delegate (Move m1, Move m2) { return m1.addeff.CompareTo(m2.addeff); }); break;
-                case "Description": moves.Sort(delegate (Move m1, Move m2) { return m1.description.CompareTo(m2.description); }); break; }
+                case "Description": moves.Sort(delegate (Move m1, Move m2) { return m1.description.CompareTo(m2.description); }); break;
+            }
             moveBinder.ResetBindings(false);
         }
 
@@ -553,7 +594,7 @@ namespace MoveGen
             {
                 Move m = moves[moveBox.SelectedIndex];
                 string txt = $"{m.id},{m.intname},{m.name},{m.effect},{m.basepower},{m.type},{m.category},{m.accuracy},{m.pp},{m.addeff},{convertTarget(m.target)},{m.priority},{m.flags},\"{m.description}\"";
-                SuperForm.exportFile($"move{m.id}.txt", txt);
+                PEGame.exportFile($"move{m.id}.txt", txt);
             }
             else
             {
@@ -593,7 +634,7 @@ namespace MoveGen
                     ret += $"{m.id},{m.intname},{m.name},{m.effect},{m.basepower},{m.type},{m.category},{m.accuracy},{m.pp},{m.addeff},{convertTarget(m.target)},{m.priority},{m.flags},\"{m.description}\"";
                     if (i != moves.Count - 1) { ret += "\r\n"; }
                 }
-                SuperForm.exportFile("moves.txt", ret);
+                PEGame.exportFile("moves.txt", ret);
             }
             else
             {
@@ -614,7 +655,7 @@ namespace MoveGen
                         ret += $"{m.id},{m.intname},{m.name},{m.effect},{m.basepower},{m.type},{m.category},{m.accuracy},{m.pp},{m.addeff},{convertTarget(m.target)},{m.priority},{m.flags},\"{m.description}\"";
                         if (i != moves.Count - 1) { ret += "\r\n"; }
                     }
-                    SuperForm.pbsFile("moves.txt", ret);
+                    PEGame.pbsFile("moves.txt", ret);
                 }
             }
             else
@@ -625,7 +666,7 @@ namespace MoveGen
 
         private void openMovestxtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start($@"PBS\moves.txt");
+            Process.Start(PEGame.Instance.root($@"PBS\moves.txt"));
         }
 
         private void findInternalNameToolStripMenuItem_Click(object sender, EventArgs e)

@@ -273,7 +273,7 @@ return txt;
 
         private void exportToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            exportFile("encounters", singleMap(map));
+            PEGame.exportFile("encounters", singleMap(map));
         }
 
         private void generateToolStripMenuItem2_Click(object sender, EventArgs e)
@@ -449,7 +449,7 @@ return txt;
                     if (i != maps.Count - 1) { txt += "\r\n"; }
                 }
             }
-            exportFile("encounters.txt", txt);
+            PEGame.exportFile("encounters.txt", txt);
         }
 
         private void overwriteToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -463,7 +463,7 @@ return txt;
                     if (i != maps.Count - 1) { txt += "\r\n"; }
                 }
             }
-            pbsFile("encounters.txt", txt);
+            PEGame.pbsFile("encounters.txt", txt);
         }
     }
 }

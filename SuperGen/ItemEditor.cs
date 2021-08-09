@@ -119,183 +119,41 @@ namespace SuperGen
             tmMoveBox.DataSource = moveBinder;
             tmMoveBox.DisplayMember = "name";
             #endregion
-            #region Loads items.txt
-            if (File.Exists(@"PBS\items.txt"))
-            {
-                try
-                {
-                    StreamReader sr = new StreamReader(File.OpenRead(@"PBS\items.txt"));
-                    string dat = sr.ReadToEnd();
-                    sr.Close();
-                    if (string.IsNullOrEmpty(dat))
-                    {
-                        emptyFile("Item Editor", "items");
-                        terminate = true;
-                        Close();
-                        return;
-                    }
-                    List<string> data = new List<string>();
-                    data = dat.Split(new string[] { "\r\n" }, StringSplitOptions.None).ToList();
-                    for (int i = 0; i < data.Count; i++)
-                    {
-                        try
-                        {
-                            if (!isUsable(data[i])) { continue; }
-                            List<string> sort = new List<string>();
-                            sort = data[i].Split(',').ToList();
-                            string id = sort[0];
-                            string intname = sort[1];
-                            string name = sort[2];
-                            string plural = sort[3];
-                            string pocket = sort[4];
-                            string price = sort[5];
-                            string description = null;
-                            string usabilityField = null;
-                            string usabilityBattle = null;
-                            string specialItem = null;
-                            string tmMove = null;
-                            
-                            try
-                            {
-                                Convert.ToInt32(sort[sort.Count - 1]);
-                                // Set if there's not a comma
-                                for (int j = 6; j < sort.Count - 3; j++)
-                                {
-                                    if (j != 6) { description += ","; }
-                                    description += sort[j];
-                                }
-                                if (string.IsNullOrEmpty(description))
-                                {
-                                    description = null;
-                                    for (int j = 6; j < sort.Count - 3; j++)
-                                    {
-                                        if (j != 6) { description += ","; }
-                                        description += sort[j];
-                                    }
-                                }
-                                usabilityField = sort[sort.Count - 3];
-                                usabilityBattle = sort[sort.Count - 2];
-                                specialItem = sort[sort.Count - 1];
-                            }
-                            catch (Exception)
-                            {
-                                // Set if there is a comma
-                                for (int j = 6; j < sort.Count - 4; j++)
-                                {
-                                    if (j != 6) { description += ","; }
-                                    description += sort[j];
-                                }
-                                if (string.IsNullOrEmpty(description))
-                                {
-                                    description = null;
-                                    for (int j = 6; j < sort.Count - 3; j++)
-                                    {
-                                        if (j != 6) { description += ","; }
-                                        description += sort[j];
-                                    }
-                                }
-                                usabilityField = sort[sort.Count - 4];
-                                usabilityBattle = sort[sort.Count - 3];
-                                specialItem = sort[sort.Count - 2];
-                                tmMove = sort[sort.Count - 1];
-                            }
 
-                            List<char> desc = new List<char>();
-                            desc = description.ToCharArray().ToList();
-                            string ret = null;
-                            for (int j = 0; j < desc.Count; j++)
-                            {
-                                if (j == 0 && desc[j] == '"') { continue; }
-                                if (j == desc.Count - 1 && desc[j] == '"' && desc[j - 1] != '\\') { continue; }
-                                if (desc[j] == '�') { ret += "é"; }
-                                else { ret += desc[j]; }
-                            }
-                            items.Add(new Item(Convert.ToInt32(id), intname, name, plural, Convert.ToInt32(pocket), Convert.ToInt32(price), ret, Convert.ToInt32(usabilityField), Convert.ToInt32(usabilityBattle), Convert.ToInt32(specialItem), tmMove));
-                        }
-                        catch (Exception)
-                        {
-                            invalidLine("items", data[i], "Item Editor");
-                            terminate = true;
-                            Close();
-                            return;
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Item Editor: Something went wrong whilst convertering data inside of \"items.txt\".", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    terminate = true;
-                    Close();
-                    return;
-                }
+            #region Loads items.txt
+            var itemsInstance = PEGame.Instance.loadItemsInstance();
+            if (itemsInstance.Count == 0)
+            {
+                Close();
             }
             else
             {
-                fileNotFound("items", "Item Editor");
-                terminate = true;
-                Close();
-                return;
+                items.Clear(); items.AddRange(itemsInstance);
             }
             #endregion
             #region Loads moves.txt
-            if (File.Exists(@"PBS\moves.txt"))
+            terminate = !PEGame.Instance.loadMoves();
+            if (terminate)
             {
-                try
-                {
-                    StreamReader sr = new StreamReader(File.OpenRead(@"PBS\moves.txt"));
-                    string dat = sr.ReadToEnd();
-                    sr.Close();
-                    if (string.IsNullOrEmpty(dat))
-                    {
-                        emptyFile("Item Editor", "moves");
-                        terminate = true;
-                        Close();
-                        return;
-                    }
-                    List<string> data = new List<string>();
-                    data = dat.Split(new string[] { "\r\n" }, StringSplitOptions.None).ToList();
-                    for (int i = 0; i < data.Count; i++)
-                    {
-                        try
-                        {
-                            if (!isUsable(data[i])) { continue; }
-                            moves.Add(data[i].Split(',')[1]);
-                        }
-                        catch (Exception)
-                        {
-                            invalidLine("moves", data[i], "Item Editor");
-                            terminate = true;
-                            Close();
-                            return;
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Item Editor: Something went wrong whilst convertering data inside of \"moves.txt\".", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    terminate = true;
-                    Close();
-                    return;
-                }
+                Close();
             }
             else
             {
-                fileNotFound("moves", "Item Editor");
-                terminate = true;
-                Close();
-                return;
+                moves.Clear(); moves.AddRange(PEGame.Instance.moves);
             }
             #endregion
+
+
             //foreach (Item item in items)
             //{
             //    permItems.Add(item);
             //}
-            if (items[0].id < 10) { thisid = "00"; }
-            else if (items[0].id < 100) { thisid = "0"; }
-            thisid += items[0].id;
+
+            thisid = items[0].intname;
             try
             {
-                using (var im = new Bitmap($@"Graphics\Icons\item{thisid}.png")) { icon.Sprite = new Bitmap(im); }
+                var iconPath = PEGame.Instance.root($@"Graphics\Items\{thisid}.png");
+                using (var im = new Bitmap(iconPath)) { icon.Sprite = new Bitmap(im); }
                 icon.Width = icon.Sprite.Height;
                 icon.Height = icon.Sprite.Height;
                 icon.Frame_Height = icon.Sprite.Height;
@@ -329,10 +187,7 @@ namespace SuperGen
         {
             try
             {
-                thisid = null;
-                if (items[itemBox.SelectedIndex].id < 10) { thisid = "00"; }
-                else if (items[itemBox.SelectedIndex].id < 100) { thisid = "0"; }
-                thisid += items[itemBox.SelectedIndex].id;
+                thisid = items[itemBox.SelectedIndex].intname;
                 foreach (Control c in Controls)
                 {
                     c.Enabled = true;
@@ -360,7 +215,8 @@ namespace SuperGen
                 }
                 try
                 {
-                    using (var im = new Bitmap($@"Graphics\Icons\item{thisid}.png")) { icon.Sprite = new Bitmap(im); }
+                    var p = PEGame.Instance.root($@"Graphics\Items\{thisid}.png");
+                    using (var im = new Bitmap(p)) { icon.Sprite = new Bitmap(im); }
                     icon.Width = icon.Sprite.Height;
                     icon.Height = icon.Sprite.Height;
                     icon.Frame_Height = icon.Sprite.Height;
@@ -467,7 +323,7 @@ namespace SuperGen
 
         private void generateToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            if (items.Count == 0) { MessageBox.Show("There are no items to generate!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); return;  }
+            if (items.Count == 0) { MessageBox.Show("There are no items to generate!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             Item item = items[itemBox.SelectedIndex];
             GenAbilityForm gaf = new GenAbilityForm();
             gaf.pbs = generateSelected();
@@ -841,7 +697,7 @@ namespace SuperGen
 
         private void openItemstxtToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start(@"PBS\items.txt");
+            Process.Start(PEGame.Instance.root(@"PBS\items.txt"));
         }
 
         private void findInternalNameToolStripMenuItem_Click(object sender, EventArgs e)
@@ -894,10 +750,19 @@ namespace SuperGen
             ofd.Filter = "PNG Files (*.png)|*.png";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                if (Path.GetFullPath($@"Graphics\Icons\item{thisid}.png") != ofd.FileName)
+                var p = PEGame.Instance.root($@"Graphics\Items\{thisid}.png");
+                if (Path.GetFullPath(p) != ofd.FileName)
                 {
-                    if (File.Exists($@"Graphics\Icons\item{thisid}.png")) { if (File.Exists($@"Backups\item{thisid}.png")) { File.Delete($@"Backups\item{thisid}.png"); } File.Move($@"Graphics\Icons\item{thisid}.png", $@"Backups\item{thisid}.png"); }
-                    File.Copy(ofd.FileName, $@"Graphics\Icons\item{thisid}.png");
+                    if (File.Exists(p))
+                    {
+                        var backupP = PEGame.Instance.root($@"Backups\Items\{thisid}.png");
+                        if (File.Exists(backupP))
+                        {
+                            File.Delete(PEGame.Instance.root($@"Backups\Items\{thisid}.png"));
+                        }
+                        File.Move(p, PEGame.Instance.root($@"Backups\Items\{thisid}.png"));
+                    }
+                    File.Copy(ofd.FileName, p);
                     itemBox_SelectedIndexChanged(sender, e);
                 }
             }
